@@ -55,6 +55,7 @@ enum {
 /* Prototipos de función */
 void setup (void);
 void add_rect (SDL_Rect *zona);
+void change_palette (int imagen, int estado);
 
 /* Variables globales */
 SDL_Surface *screen;
@@ -79,10 +80,13 @@ SDL_Color paleta_circulo[NUM_STATES][3] = {
 
 int main (int argc, char *argv[]) {
 	SDL_Event event;
+	SDLKey key;
+	SDLMod mod;
 	int focus = -1, done = 0;
 	int posx[3] = {10, 200, 400};
 	int posy[3] = {10, 200, 200};
 	Uint32 background_color;
+	Uint32 last_time, now_time;
 	SDL_Rect rect;
 	int g;
 	
@@ -91,14 +95,16 @@ int main (int argc, char *argv[]) {
 	/* Generar el color de fondo */
 	background_color = SDL_MapRGB (screen->format, 255, 255, 255);
 	
-	SDL_SetPalette (images[IMG_CUADRADO], SDL_LOGPAL|SDL_PHYSPAL, paleta_cuadrado[NONE_SELECTED], 0, 2);
-	SDL_SetPalette (images[IMG_TRIANGULO], SDL_LOGPAL|SDL_PHYSPAL, paleta_triangulo[NONE_SELECTED], 0, 3);
-	SDL_SetPalette (images[IMG_CIRCULO], SDL_LOGPAL|SDL_PHYSPAL, paleta_circulo[NONE_SELECTED], 0, 3);
+	change_palette (IMG_CUADRADO, NONE_SELECTED);
+	change_palette (IMG_TRIANGULO, NONE_SELECTED);
+	change_palette (IMG_CIRCULO, NONE_SELECTED);
 	
 	SDL_FillRect (screen, NULL, background_color);
 	SDL_UpdateRect (screen, 0, 0, 0, 0);
 	
 	do {
+		last_time = SDL_GetTicks ();
+		
 		/* A la entrada de la iteración, borrar la posición de las figuras */
 		for (g = 0; g < 3; g++) {
 			rect.x = posx[IMG_CUADRADO + g];
@@ -115,6 +121,24 @@ int main (int argc, char *argv[]) {
 					/* Vamos a cerrar la aplicación */
 					done = 1;
 					break;
+				case SDL_KEYDOWN:
+					key = event.key.keysym.sym;
+					mod = event.key.keysym.mod;
+					
+					if (key == SDLK_TAB) {
+						if (focus >= 0) {
+							change_palette (focus, NONE_SELECTED);
+						}
+						
+						if (mod & KMOD_SHIFT) focus--;
+						else focus++;
+						if (focus > IMG_CIRCULO) focus = -1;
+						if (focus < -1) focus = IMG_CIRCULO;
+						
+						if (focus >= 0) {
+							change_palette (focus, SELECTED);
+						}
+					}
 			}
 		}
 		
@@ -129,6 +153,9 @@ int main (int argc, char *argv[]) {
 		}
 		
 		SDL_UpdateRects (screen, num_rects, redraw_rects);
+		
+		now_time = SDL_GetTicks ();
+		if (now_time < last_time + FPS) SDL_Delay(last_time + FPS - now_time);
 		
 	} while (!done);
 	
@@ -193,3 +220,14 @@ void add_rect (SDL_Rect *zona) {
 		num_rects++;
 	}
 }
+
+void change_palette (int imagen, int estado) {
+	if (imagen == IMG_CUADRADO) {
+		SDL_SetPalette (images[IMG_CUADRADO], SDL_LOGPAL|SDL_PHYSPAL, paleta_cuadrado[estado], 0, 2);
+	} else if (imagen == IMG_TRIANGULO) {
+		SDL_SetPalette (images[IMG_TRIANGULO], SDL_LOGPAL|SDL_PHYSPAL, paleta_triangulo[estado], 0, 3);
+	} else {
+		SDL_SetPalette (images[IMG_CIRCULO], SDL_LOGPAL|SDL_PHYSPAL, paleta_circulo[estado], 0, 3);
+	}
+}
+
