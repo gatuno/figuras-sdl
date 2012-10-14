@@ -17,6 +17,8 @@ Makefile
 config.log
 config.status
 .deps
-src/paddle-puffle
+src/figuras-sdl
 *.o
 stamp-h1
+
+*~
